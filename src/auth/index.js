@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Joi = require('@hapi/joi');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const jwt = require('jsonwebtoken');
 
 const db = require('../db/connection');
 const users = db.get('users');
@@ -44,7 +45,18 @@ router.post('/register', (req, res, next) => {
             users.insert(newUser)
               .then(addedUser => {
                 delete addedUser.password;
-                res.json(newUser)
+                jwt.sign(
+                  addedUser,
+                  process.env.TOKEN_SECRET,
+                  { expiresIn: '1d' },
+                  (err, token) => {
+                    if (err) {
+                      next(err);
+                    } else {
+                      res.json({ addedUser, token });
+                    }
+                  }
+                )
               })
               .catch(error => next(error))
           })
