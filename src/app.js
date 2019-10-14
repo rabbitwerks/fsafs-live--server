@@ -1,5 +1,6 @@
 const express = require('express');
 const volleyball = require('volleyball');
+const cors = require('cors');
 
 const auth = require('./auth');
 
@@ -8,6 +9,8 @@ const port = 1337;
 require('dotenv').config();
 
 const app = express();
+
+app.use(cors())
 
 app.use(volleyball);
 app.use(express.json());

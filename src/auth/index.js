@@ -46,7 +46,7 @@ router.post('/register', (req, res, next) => {
               .then(addedUser => {
                 delete addedUser.password;
                 jwt.sign(
-                  addedUser,
+                  { _id :addedUser._id },
                   process.env.TOKEN_SECRET,
                   { expiresIn: '1d' },
                   (err, token) => {
