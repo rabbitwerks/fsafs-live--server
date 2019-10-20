@@ -72,4 +72,8 @@ router.get('/login', (req, res) => {
   res.send('Welcome to the Login route!')
 });
 
+router.post('/login', (req, res) => {
+  res.json(req.body);
+});
+
 module.exports = router;
