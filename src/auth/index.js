@@ -16,6 +16,32 @@ const registerSchema = Joi.object().keys({
   email: Joi.string().email({ minDomainSegments: 2 })
 });
 
+const loginSchema = Joi.object().keys({
+  username: Joi.string().alphanum().min(3).max(30).required(),
+  password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/),
+});
+
+function responseError(res, next, statusCode) {
+  res.status(statusCode);
+  const error = new Error('Unable able to process request');
+  next(error);
+}
+
+function createToken_sendResponse(res, next, user) {
+  jwt.sign(
+    { _id : user._id },
+    process.env.TOKEN_SECRET,
+    { expiresIn: '1d' },
+    (err, token) => {
+      if (err) {
+        next(err);
+      } else {
+        res.json({ user, token });
+      }
+    }
+  )
+}
+
 
 router.get('/register', (req, res) => {
   res.send('Welcome to the Register route!')
@@ -45,18 +71,7 @@ router.post('/register', (req, res, next) => {
             users.insert(newUser)
               .then(addedUser => {
                 delete addedUser.password;
-                jwt.sign(
-                  { _id :addedUser._id },
-                  process.env.TOKEN_SECRET,
-                  { expiresIn: '1d' },
-                  (err, token) => {
-                    if (err) {
-                      next(err);
-                    } else {
-                      res.json({ addedUser, token });
-                    }
-                  }
-                )
+                createToken_sendResponse(res, next, addedUser)
               })
               .catch(error => next(error))
           })
@@ -72,8 +87,36 @@ router.get('/login', (req, res) => {
   res.send('Welcome to the Login route!')
 });
 
-router.post('/login', (req, res) => {
-  res.json(req.body);
+router.post('/login', (req, res, next) => {
+  const result = loginSchema.validate(req.body);
+  if(!result.error) {
+    users.findOne({
+      username: req.body.username,
+    })
+    .then(user => {
+      if (user) {
+        bcrypt.compare(req.body.password, user.password)
+          .then(result => {
+            if (result === true) {
+              const payload = {
+                _id: user._id,
+                username: user.username,
+                userClass: user.userClass,
+              };
+              delete user.password;
+              createToken_sendResponse(res, next, payload)
+
+            } else {
+              responseError(res, next, 422);
+            }
+          })
+      } else {
+        responseError(res, next, 422);
+      }
+    })
+  } else {
+    responseError(res, next, 422);
+  }
 });
 
 module.exports = router;
