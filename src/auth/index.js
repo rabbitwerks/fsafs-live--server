@@ -70,8 +70,12 @@ router.post('/register', (req, res, next) => {
             };
             users.insert(newUser)
               .then(addedUser => {
-                delete addedUser.password;
-                createToken_sendResponse(res, next, addedUser)
+                const user = {
+                  _id: addedUser._id,
+                  username: addedUser.username,
+                  userClass: addedUser.userClass,
+                }
+                createToken_sendResponse(res, next, user)
               })
               .catch(error => next(error))
           })
