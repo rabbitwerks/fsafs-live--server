@@ -1,11 +1,13 @@
 const router = require('express').Router();
 const Joi = require('@hapi/joi');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 const jwt = require('jsonwebtoken');
 
 const db = require('../db/connection');
 const users = db.get('users');
+
+const isLoggedIn = require('../middlewares').isLoggedIn;
 
 const registerSchema = Joi.object().keys({
   firstName: Joi.string().alphanum().min(3).max(30).required(),
@@ -36,6 +38,9 @@ function createToken_sendResponse(res, next, user) {
       if (err) {
         next(err);
       } else {
+        res.cookie('token', token, {
+          'maxAge': 86400000,
+        })
         res.json({ user, token });
       }
     }
@@ -72,6 +77,7 @@ router.post('/register', (req, res, next) => {
               .then(addedUser => {
                 const user = {
                   _id: addedUser._id,
+                  firstName: user.firstName,
                   username: addedUser.username,
                   userClass: addedUser.userClass,
                 }
@@ -104,6 +110,7 @@ router.post('/login', (req, res, next) => {
             if (result === true) {
               const payload = {
                 _id: user._id,
+                firstName: user.firstName,
                 username: user.username,
                 userClass: user.userClass,
               };
@@ -122,5 +129,12 @@ router.post('/login', (req, res, next) => {
     responseError(res, next, 422);
   }
 });
+
+router.get('/verify', isLoggedIn, (req, res, next) => {
+  if(req.user) {
+    console.log(req.user, 'cookie exists')
+  }
+  res.json({ user: req.user })
+}) 
 
 module.exports = router;
