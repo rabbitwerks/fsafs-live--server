@@ -77,7 +77,7 @@ router.post('/register', (req, res, next) => {
               .then(addedUser => {
                 const user = {
                   _id: addedUser._id,
-                  firstName: user.firstName,
+                  firstName: addedUser.firstName,
                   username: addedUser.username,
                   userClass: addedUser.userClass,
                 }
@@ -133,8 +133,8 @@ router.post('/login', (req, res, next) => {
 router.get('/verify', isLoggedIn, (req, res, next) => {
   if(req.user) {
     console.log(req.user, 'cookie exists')
+    res.json({ user: req.user })
   }
-  res.json({ user: req.user })
 }) 
 
 module.exports = router;

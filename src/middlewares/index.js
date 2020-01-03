@@ -18,10 +18,9 @@ function isLoggedIn(req, res, next) {
     } else {
       users.findOne({'_id': decoded._id })
         .then(user => {
-          if (user) {
-            // TODO: clear out sensitive props
+          if (user) { 
             req.user = {
-              _id: user._id,
+              _id: user._id, 
               firstName: user.firstName,
               username: user.username,
               userClass: user.userClass
