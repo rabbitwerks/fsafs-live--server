@@ -1,13 +1,12 @@
-
 {
   "name": "fsafs-backend",
   "alias": "fsafs-backend.now.sh",
   "version": 2,
   "builds": [{
-    "src": "src/index.js",
+    "src": "src/app.js",
     "use": "@now/node-server"
   }],
   "routes": [
-    { "src": "/(.*)", "dest": "src/index.js" }
+    { "src": "/(.*)", "dest": "src/app.js" }
   ]
 }
