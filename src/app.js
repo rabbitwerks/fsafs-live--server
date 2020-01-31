@@ -1,12 +1,14 @@
 const express = require('express');
-const volleyball = require('volleyball');
+// const volleyball = require('volleyball');
+const morgan = require('morgan');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 
+require('dotenv').config();
+
 const corsOptions = {
-  origin: 'http://localhost:8080',
+  origin: process.env.CORS_ORIGIN,
   credentials: true,
-  optionsSuccessStatus: 200,
 }
 
 const auth = require('./auth');
@@ -16,14 +18,13 @@ const api = require('./api');
 
 const port = 1337;
 
-require('dotenv').config();
 
 const app = express();
 
 app.use(cors(corsOptions));
 app.use(cookieParser());
 
-app.use(volleyball);
+app.use(morgan('tiny'));
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -52,3 +53,5 @@ app.use(notFound);
 app.use(errorHandler);
 
 app.listen(port, () => console.log(`Server started listening on port ${port}!`))
+process.on('uncaughtException', (error) => console.log(error));
+process.on('unhandledRejection', (error) => console.log(error));

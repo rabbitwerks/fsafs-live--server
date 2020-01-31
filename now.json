@@ -8,5 +8,10 @@
   }],
   "routes": [
     { "src": "/(.*)", "dest": "src/app.js" }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "CORS_ORIGIN": "https://xenodochial-mcnulty-9c475f.netlify.com",
+    "DB_URL": "@auth-db-url"
+  }
 }

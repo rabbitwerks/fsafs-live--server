@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 const jwt = require('jsonwebtoken');
 
-const db = require('../db/connection');
-const users = db.get('users');
+const getDB = require('../db/connection');
+// getDB();
 
 const isLoggedIn = require('../middlewares').isLoggedIn;
 
@@ -52,44 +52,51 @@ router.get('/register', (req, res) => {
   res.send('Welcome to the Register route!')
 });
 
-router.post('/register', (req, res, next) => {
-  const result = registerSchema.validate(req.body);
-  if(!result.error) {
-    users.findOne({
-      username: req.body.username,
-    }).then(user => {
-      if(user !== null) {
-        console.log('Username already exists, please choose another...');
-        const error = new Error('Username already exists, please choose another...');
-        next(error);
-      } else {
-        bcrypt.hash(req.body.password.trim(), saltRounds)
-          .then(hashedPassword => {
-            const newUser = {
-              firstName: req.body.firstName,
-              lastName: req.body.lastName,
-              username: req.body.username,
-              userClass: req.body.userClass,
-              email: req.body.email,
-              password: hashedPassword
-            };
-            users.insert(newUser)
-              .then(addedUser => {
-                const user = {
-                  _id: addedUser._id,
-                  firstName: addedUser.firstName,
-                  username: addedUser.username,
-                  userClass: addedUser.userClass,
-                }
-                createToken_sendResponse(res, next, user)
-              })
-              .catch(error => next(error))
-          })
-          .catch(error => next(error));
-      }
-    })
-  } else {
-    res.json(result.error);
+router.post('/register', async (req, res, next) => {
+  try {
+    const result = registerSchema.validate(req.body);
+    if(!result.error) {
+      const db = await getDB();
+      const users = db.get('users');
+      users.findOne({
+        username: req.body.username,
+      }).then(user => {
+        if(user !== null) {
+          console.log('Username already exists, please choose another...');
+          const error = new Error('Username already exists, please choose another...');
+          next(error);
+        } else {
+          bcrypt.hash(req.body.password.trim(), saltRounds)
+            .then(hashedPassword => {
+              const newUser = {
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                username: req.body.username,
+                userClass: req.body.userClass,
+                email: req.body.email,
+                password: hashedPassword
+              };
+              users.insert(newUser)
+                .then(addedUser => {
+                  const user = {
+                    _id: addedUser._id,
+                    firstName: addedUser.firstName,
+                    username: addedUser.username,
+                    userClass: addedUser.userClass,
+                  }
+                  createToken_sendResponse(res, next, user)
+                })
+                .catch(error => next(error))
+            })
+            .catch(error => next(error));
+        }
+      })
+        .catch(error => next(error));
+    } else {
+      res.json(result.error);
+    }
+  } catch (error) {
+    next(error)
   }
 })
 
@@ -99,32 +106,47 @@ router.get('/login', (req, res) => {
 
 router.post('/login', (req, res, next) => {
   const result = loginSchema.validate(req.body);
+  console.log(result)
   if(!result.error) {
-    users.findOne({
-      username: req.body.username,
-    })
-    .then(user => {
-      if (user) {
-        bcrypt.compare(req.body.password, user.password)
-          .then(result => {
-            if (result === true) {
-              const payload = {
-                _id: user._id,
-                firstName: user.firstName,
-                username: user.username,
-                userClass: user.userClass,
-              };
-              delete user.password;
-              createToken_sendResponse(res, next, payload)
-
-            } else {
-              responseError(res, next, 422);
-            }
-          })
-      } else {
-        responseError(res, next, 422);
-      }
-    })
+    console.log('no error.');
+    getDB().then(db => {
+        console.log('got db!!!!')
+        const users = db.get('users');
+        console.log('Finding user...')
+        users.findOne({
+          username: req.body.username,
+        })
+        .then(user => {
+          console.log('Got user', user);
+          if (user) {
+            bcrypt.compare(req.body.password, user.password)
+              .then(result => {
+                console.log('compare result', result)
+                if (result === true) {
+                  console.log('ValidPassword')
+                  const payload = {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    username: user.username,
+                    userClass: user.userClass,
+                  };
+                  delete user.password;
+                  createToken_sendResponse(res, next, payload)
+    
+                } else {
+                  responseError(res, next, 422);
+                }
+              })
+          } else {
+            responseError(res, next, 422);
+          }
+        })
+          .catch(error => next(error));
+      }).catch(error => {
+        console.log('did not get db...')
+        console.error(error);
+        next(error);
+      });
   } else {
     responseError(res, next, 422);
   }
@@ -134,6 +156,10 @@ router.get('/verify', isLoggedIn, (req, res, next) => {
   if(req.user) {
     console.log(req.user, 'cookie exists')
     res.json({ user: req.user })
+  } else {
+    res.json({
+      'message': 'Not logged in!',
+    })
   }
 }) 
 

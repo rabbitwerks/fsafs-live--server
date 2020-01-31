@@ -20,6 +20,7 @@
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "monk": "^7.1.1",
+    "morgan": "^1.9.1",
     "volleyball": "^1.5.1"
   },
   "devDependencies": {

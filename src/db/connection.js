@@ -1,8 +1,21 @@
 const monk = require('monk');
 
-const local = 'localhost:27017/fsafs-live';
-const remote = 'mongodb+srv://rabbitwerks:<gax4-ic!-y4J2Hp>@userdb-ghjre.gcp.mongodb.net/test?retryWrites=true&w=majority';
+let db = null;
+function getDB() {
+  if (db) {
+    console.log('already connected to db...');
+    return new Promise((resolve) => resolve(db));
+  }
+  console.log('trying to connect to db...');
+  return monk(process.env.DB_URL, { useUnifiedTopology: true })
+    .then(connection => {
+      console.log('connected to db!');
+      db = connection;
+      return connection;
+    }).catch(error => {
+      console.log('Error connecting to DB');
+      console.log(error);
+    })
+}
 
-const db = monk(remote, { useUnifiedTopology: true });
-
-module.exports = db;
+module.exports = getDB;

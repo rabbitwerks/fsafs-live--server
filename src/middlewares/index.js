@@ -1,21 +1,22 @@
 const jwt = require('jsonwebtoken');
 
-const db = require('../db/connection.js');
-const users = db.get('users');
+const getDB = require('../db/connection.js');
 
 
 
 function isLoggedIn(req, res, next) {
   if(!req.cookies.token) {
     console.log('Cookie not sent');
-    return
+    return next();
   }
-  jwt.verify(req.cookies.token, process.env.TOKEN_SECRET, (err, decoded) => {
+  jwt.verify(req.cookies.token, process.env.TOKEN_SECRET, async (err, decoded) => {
     if (err) {
       const error = new Error(err);
       req.user = null;
       next(error);
     } else {
+      const db = await getDB();
+      const users = db.get('users');
       users.findOne({'_id': decoded._id })
         .then(user => {
           if (user) { 
